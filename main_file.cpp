@@ -34,6 +34,16 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 float speed_x = 0;//[radiany/s]
 float speed_y = 0;//[radiany/s]
 
+float verts[] = {
+0,0,-0.5,1, 0,0,0.5,1, -1,-1,0,1,
+0,0,-0.5,1, 0,0,0.5,1, 1,-1,0,1,};
+
+float colors[] = {
+0.38,0.15,0.83,1, 0.38,0.15,0.83,1, 1,0,0,1,
+0.38,0.15,0.83,1, 0.38,0.15,0.83,1, 0,1,0,1,};
+
+int vertexCount = 6;
+
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
 	fputs(description, stderr);
@@ -100,13 +110,20 @@ void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
 
 	//Zamiast poniższych linijek należy wstawić kod dotyczący rysowania własnych obiektów (glDrawArrays/glDrawElements i wszystko dookoła)
 	//-----------
-	spLambert->use(); //Aktyeuj program cieniujący
-	glUniform4f(spLambert->u("color"), 0, 1, 0, 1); //Ustaw kolor rysowania obiektu
-	glUniformMatrix4fv(spLambert->u("P"), 1, false, glm::value_ptr(P)); //Załaduj do programu cieniującego macierz rzutowania
-	glUniformMatrix4fv(spLambert->u("V"), 1, false, glm::value_ptr(V)); //Załaduj do programu cieniującego macierz widoku
-	glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(M)); //Załaduj do programu cieniującego macierz modelu
+	spColored->use();
+	glUniformMatrix4fv(spColored->u("P"), 1, false, glm::value_ptr(P));
+	glUniformMatrix4fv(spColored->u("V"), 1, false, glm::value_ptr(V));
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(M));
+
+	glEnableVertexAttribArray(spColored->a("vertex"));
+	glVertexAttribPointer(spColored->a("vertex"), 4, GL_FLOAT, false, 0, verts);
+	glEnableVertexAttribArray(spColored->a("color"));
+	glVertexAttribPointer(spColored->a("color"), 4, GL_FLOAT, false, 0, colors);
+
+	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 	
-	Models::torus.drawSolid(); //Narysuj obiekt
+	glDisableVertexAttribArray(spColored->a("vertex"));
+	glDisableVertexAttribArray(spColored->a("color"));
 	//-----------
 
 

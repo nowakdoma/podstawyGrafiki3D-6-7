@@ -30,19 +30,11 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "allmodels.h"
 #include "lodepng.h"
 #include "shaderprogram.h"
+#include "myCube.h"
 
 float speed_x = 0;//[radiany/s]
 float speed_y = 0;//[radiany/s]
 
-float verts[] = {
-0,0,-0.5,1, 0,0,0.5,1, -1,-1,0,1,
-0,0,-0.5,1, 0,0,0.5,1, 1,-1,0,1,};
-
-float colors[] = {
-0.38,0.15,0.83,1, 0.38,0.15,0.83,1, 1,0,0,1,
-0.38,0.15,0.83,1, 0.38,0.15,0.83,1, 0,1,0,1,};
-
-int vertexCount = 6;
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -116,11 +108,11 @@ void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(M));
 
 	glEnableVertexAttribArray(spColored->a("vertex"));
-	glVertexAttribPointer(spColored->a("vertex"), 4, GL_FLOAT, false, 0, verts);
+	glVertexAttribPointer(spColored->a("vertex"), 4, GL_FLOAT, false, 0, myCubeVertices);
 	glEnableVertexAttribArray(spColored->a("color"));
-	glVertexAttribPointer(spColored->a("color"), 4, GL_FLOAT, false, 0, colors);
+	glVertexAttribPointer(spColored->a("color"), 4, GL_FLOAT, false, 0, myCubeColors);
 
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+	glDrawArrays(GL_TRIANGLES, 0, myCubeVertexCount);
 	
 	glDisableVertexAttribArray(spColored->a("vertex"));
 	glDisableVertexAttribArray(spColored->a("color"));

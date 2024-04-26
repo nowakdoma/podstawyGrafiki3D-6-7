@@ -93,13 +93,7 @@ void error_callback(int error, const char* description) {
 }
 
 int mode = 0;
-void key_callback(
-	GLFWwindow* window,
-	int key,
-	int scancode,
-	int action,
-	int mod
-) {
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod) {
 
 	if (action == GLFW_PRESS) {
 		if (key == GLFW_KEY_LEFT) {
@@ -112,20 +106,27 @@ void key_callback(
 		mode = (mode + 4) % 4;
 
 		switch (mode) {
-		case 0:
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+		case 0: //mirror 
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 			break;
-		case 1:
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+		case 1: //repeat
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			break;
-		case 2:
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+		case 2: //clamp to edge
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			break;
-		case 3:
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		case 3: //Clamp to Border
+			float col[] = { 0.38f,0.15f,0.83f,1.0f };
+			glTexParameterfv(GL_TEXTURE_2D,
+				GL_TEXTURE_BORDER_COLOR, col);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			break;
 		}
 
@@ -143,7 +144,12 @@ void initOpenGLProgram(GLFWwindow* window) {
 	glfwSetKeyCallback(window, key_callback);
 
 	tex = readTexture("stone-wall.png");
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D,
+		GL_TEXTURE_WRAP_S,
+		GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D,
+		GL_TEXTURE_WRAP_T,
+		GL_MIRRORED_REPEAT);
 
 
 }
@@ -180,6 +186,11 @@ void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
 	glEnableVertexAttribArray(spTextured->a("vertex"));
 	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, myCubeVertices);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
+
+	for (int i = 0; i < sizeof(texCoords); i++) {
+		if (texCoords[i] == 1.0f) texCoords[i] = 3.0f;
+	}
+
 	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, texCoords);
 
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, tex);

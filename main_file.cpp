@@ -37,6 +37,38 @@ float speed_y = 0;//[radiany/s]
 GLuint tex;
 
 
+GLuint generateColorMIPMaps() {
+	GLuint tex;
+	glActiveTexture(GL_TEXTURE0);
+	std::vector<unsigned char> reds(256 * 256 * 3, 0);
+	std::vector<unsigned char> greens(256 * 256 * 3, 0);
+	std::vector<unsigned char> blues(256 * 256 * 3, 0);
+	std::vector<unsigned char> yellows(256 * 256 * 3, 0);
+	std::vector<unsigned char> magentas(256 * 256 * 3, 0);
+	std::vector<unsigned char> cyans(256 * 256 * 3, 0);
+	std::vector<unsigned char> whites(256 * 256 * 3, 0);
+	for (int i = 0; i < 256 * 256 * 3; i += 3) {
+		reds[i + 0] = 0xff; greens[i + 1] = 0xff; blues[i + 2] = 0xff;
+		yellows[i + 0] = 0xff; yellows[i + 1] = 0xff;
+		magentas[i + 0] = 0xff; magentas[i + 2] = 0xff;
+		cyans[i + 1] = 0xff; cyans[i + 2] = 0xff;
+		whites[i + 0] = 0xff; whites[i + 1] = 0xff; whites[i + 2] = 0xff;
+	}
+	glGenTextures(1, &tex); glBindTexture(GL_TEXTURE_2D, tex);
+	unsigned char* pointers[] = {
+	reds.data(),greens.data(),blues.data(),yellows.data(),
+	magentas.data(),cyans.data(),whites.data() };
+	int dim = 256;
+	for (int level = 0; level <= 8; level++) {
+		glTexImage2D(GL_TEXTURE_2D, level, GL_RGB8, dim, dim, 0,
+			GL_RGB, GL_UNSIGNED_BYTE, pointers[(level + 1) % 7]);
+		dim /= 2;
+	}
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	return tex;
+}
+
 float texCoords[] = {
 
 		1.0f, 0.0f, 0.0f, 1.0f,
@@ -137,7 +169,10 @@ void initOpenGLProgram(GLFWwindow* window) {
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
 
-	tex = readTexture("stone-wall.png");
+	//tex = readTexture("stone-wall.png");
+	
+	tex = generateColorMIPMaps();
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 

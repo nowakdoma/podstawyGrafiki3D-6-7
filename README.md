@@ -10,3 +10,5 @@ Repozytorium zawiera rozwiązania zadań z grafiki komputerowej 3D, które opier
 5. Porównanie różnych metod adresowania tekstur. (mirror, repeat, clamp to edge, clamp to border)
 6. Porównanie różnych wariantów Mip Mappingu na wczytanej teksturze. (GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR)
 7. Porównanie różnych wariantów Mip Mappingu na wygenerowanej teksturze z MIPmapami o różnych kolorach.
+8. Porównanie filtrowania anizotropowego dla stopnia 1.0f i maksymalnego dostępnego na karcie graficznej.
+9. Cieniowanie oteksturowanych obiektów przy pomocy gotowego programu cieniującego.

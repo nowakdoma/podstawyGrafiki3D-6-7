@@ -4,21 +4,18 @@ rozprowadzać dalej i / lub modyfikować na warunkach Powszechnej
 Licencji Publicznej GNU, wydanej przez Fundację Wolnego
 Oprogramowania - według wersji 2 tej Licencji lub(według twojego
 wyboru) którejś z późniejszych wersji.
-
 Niniejszy program rozpowszechniany jest z nadzieją, iż będzie on
 użyteczny - jednak BEZ JAKIEJKOLWIEK GWARANCJI, nawet domyślnej
 gwarancji PRZYDATNOŚCI HANDLOWEJ albo PRZYDATNOŚCI DO OKREŚLONYCH
 ZASTOSOWAŃ.W celu uzyskania bliższych informacji sięgnij do
 Powszechnej Licencji Publicznej GNU.
-
 Z pewnością wraz z niniejszym programem otrzymałeś też egzemplarz
 Powszechnej Licencji Publicznej GNU(GNU General Public License);
 jeśli nie - napisz do Free Software Foundation, Inc., 59 Temple
 Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 */
-
 #define GLM_FORCE_RADIANS
-
+#include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -31,70 +28,30 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "lodepng.h"
 #include "shaderprogram.h"
 #include "myCube.h"
-
 float speed_x = 0;//[radiany/s]
 float speed_y = 0;//[radiany/s]
 GLuint tex;
-
-
-GLuint generateColorMIPMaps() {
-	GLuint tex;
-	glActiveTexture(GL_TEXTURE0);
-	std::vector<unsigned char> reds(256 * 256 * 3, 0);
-	std::vector<unsigned char> greens(256 * 256 * 3, 0);
-	std::vector<unsigned char> blues(256 * 256 * 3, 0);
-	std::vector<unsigned char> yellows(256 * 256 * 3, 0);
-	std::vector<unsigned char> magentas(256 * 256 * 3, 0);
-	std::vector<unsigned char> cyans(256 * 256 * 3, 0);
-	std::vector<unsigned char> whites(256 * 256 * 3, 0);
-	for (int i = 0; i < 256 * 256 * 3; i += 3) {
-		reds[i + 0] = 0xff; greens[i + 1] = 0xff; blues[i + 2] = 0xff;
-		yellows[i + 0] = 0xff; yellows[i + 1] = 0xff;
-		magentas[i + 0] = 0xff; magentas[i + 2] = 0xff;
-		cyans[i + 1] = 0xff; cyans[i + 2] = 0xff;
-		whites[i + 0] = 0xff; whites[i + 1] = 0xff; whites[i + 2] = 0xff;
-	}
-	glGenTextures(1, &tex); glBindTexture(GL_TEXTURE_2D, tex);
-	unsigned char* pointers[] = {
-	reds.data(),greens.data(),blues.data(),yellows.data(),
-	magentas.data(),cyans.data(),whites.data() };
-	int dim = 256;
-	for (int level = 0; level <= 8; level++) {
-		glTexImage2D(GL_TEXTURE_2D, level, GL_RGB8, dim, dim, 0,
-			GL_RGB, GL_UNSIGNED_BYTE, pointers[(level + 1) % 7]);
-		dim /= 2;
-	}
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	return tex;
-}
-
 float texCoords[] = {
-
 		1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		1.0f, 1.0f, 0.0f, 1.0f,
-
 		1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		1.0f, 1.0f, 0.0f, 1.0f,
-
 		1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		1.0f, 1.0f, 0.0f, 1.0f,
-
 		1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		1.0f, 1.0f, 0.0f, 1.0f,
-
 		1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		1.0f, 1.0f, 0.0f, 1.0f,
-
 		1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		1.0f, 1.0f, 0.0f, 1.0f,
 };
+float maxAnisotropy;
 
 GLuint readTexture(const char* filename) {
 	GLuint tex;
@@ -104,19 +61,21 @@ GLuint readTexture(const char* filename) {
 	unsigned width, height; //Zmienne do których wczytamy wymiary obrazka
 	//Wczytaj obrazek
 	unsigned error = lodepng::decode(image, width, height, filename);
-
 	//Import do pamięci karty graficznej
 	glGenTextures(1, &tex); //Zainicjuj jeden uchwyt
 	glBindTexture(GL_TEXTURE_2D, tex); //Uaktywnij uchwyt
-
 	//Wczytaj obrazek do pamięci KG skojarzonej z uchwytem
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f);
+
+	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
+
 	return tex;
 }
 
@@ -124,10 +83,8 @@ GLuint readTexture(const char* filename) {
 void error_callback(int error, const char* description) {
 	fputs(description, stderr);
 }
-
 int mode = 0;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod) {
-
 	if (action == GLFW_PRESS) {
 		if (key == GLFW_KEY_LEFT) {
 			mode--;
@@ -135,32 +92,21 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		if (key == GLFW_KEY_RIGHT) {
 			mode++;
 		}
-
-		mode = (mode + 4) % 4;
+		mode = (mode + 2) % 2;
 
 		switch (mode) {
 		case 0:
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 1.0f);
 			break;
 
 		case 1:
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 			break;
 
-		case 2:
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-			break;
-
-		case 3: //Clamp to Border
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			break;
 		}
 
 	}
-
 }
-
-
 //Procedura inicjująca
 void initOpenGLProgram(GLFWwindow* window) {
     initShaders();
@@ -169,17 +115,11 @@ void initOpenGLProgram(GLFWwindow* window) {
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
 
-	//tex = readTexture("stone-wall.png");
-	
-	tex = generateColorMIPMaps();
-
+	tex = readTexture("stone-wall.png");
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-
+	
 }
-
 
 //Zwolnienie zasobów zajętych przez program
 void freeOpenGLProgram(GLFWwindow* window) {
@@ -187,7 +127,6 @@ void freeOpenGLProgram(GLFWwindow* window) {
     //************Tutaj umieszczaj kod, który należy wykonać po zakończeniu pętli głównej************
 	glDeleteTextures(1, &tex);
 }
-
 //Procedura rysująca zawartość sceny
 void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
 	//************Tutaj umieszczaj kod rysujący obraz******************l
@@ -198,17 +137,14 @@ void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
 	M = glm::rotate(M, angle_x, glm::vec3(1.0f, 0.0f, 0.0f)); //Pomnóż macierz modelu razy macierz obrotu o kąt angle wokół osi X
 	//glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
 	//glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f); //Wylicz macierz rzutowania
-
 	glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 1.5f, -1.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 50.0f);
-
 	//Zamiast poniższych linijek należy wstawić kod dotyczący rysowania własnych obiektów (glDrawArrays/glDrawElements i wszystko dookoła)
 	//-----------
 	spTextured->use();
 	glUniformMatrix4fv(spTextured->u("P"), 1, false, glm::value_ptr(P));
 	glUniformMatrix4fv(spTextured->u("V"), 1, false, glm::value_ptr(V));
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(M));
-
 	glEnableVertexAttribArray(spTextured->a("vertex"));
 	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, myCubeVertices);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
@@ -218,54 +154,37 @@ void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
 	}
 
 	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, texCoords);
-
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, tex);
 	glUniform1i(spTextured->u("tex"), 0);
-
 	//glDrawArrays(GL_TRIANGLES, 0, myCubeVertexCount);
 	glDrawArrays(GL_TRIANGLES, 18, 6);
-
 	glDisableVertexAttribArray(spTextured->a("vertex"));
 	glDisableVertexAttribArray(spTextured->a("texCoord"));
 	//-----------
-
-
 	glfwSwapBuffers(window); //Skopiuj bufor tylny do bufora przedniego
 }
-
-
 int main(void)
 {
-
-
 	GLFWwindow* window; //Wskaźnik na obiekt reprezentujący okno
-
 	glfwSetErrorCallback(error_callback);//Zarejestruj procedurę obsługi błędów
-
 	if (!glfwInit()) { //Zainicjuj bibliotekę GLFW
 		fprintf(stderr, "Nie można zainicjować GLFW.\n");
 		exit(EXIT_FAILURE);
 	}
-
 	window = glfwCreateWindow(500, 500, "OpenGL", NULL, NULL);  //Utwórz okno 500x500 o tytule "OpenGL" i kontekst OpenGL.
-
 	if (!window) //Jeżeli okna nie udało się utworzyć, to zamknij program
 	{
 		fprintf(stderr, "Nie można utworzyć okna.\n");
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
-
 	glfwMakeContextCurrent(window); //Od tego momentu kontekst okna staje się aktywny i polecenia OpenGL będą dotyczyć właśnie jego.
 	glfwSwapInterval(1); //Czekaj na 1 powrót plamki przed pokazaniem ukrytego bufora
-
 	if (glewInit() != GLEW_OK) { //Zainicjuj bibliotekę GLEW
 		fprintf(stderr, "Nie można zainicjować GLEW.\n");
 		exit(EXIT_FAILURE);
 	}
-
 	initOpenGLProgram(window); //Operacje inicjujące
-
 	//Główna pętla
 	float angle_x = 0; //zadeklaruj zmienną przechowującą aktualny kąt obrotu
 	float angle_y = 0; //zadeklaruj zmienną przechowującą aktualny kąt obrotu
@@ -278,9 +197,7 @@ int main(void)
 		drawScene(window,angle_x,angle_y); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
-
 	freeOpenGLProgram(window);
-
 	glfwDestroyWindow(window); //Usuń kontekst OpenGL i okno
 	glfwTerminate(); //Zwolnij zasoby zajęte przez GLFW
 	exit(EXIT_SUCCESS);
